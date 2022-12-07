@@ -3,8 +3,6 @@ package com.example.currencyformater.di
 import com.example.currencyformater.common.Constants.API_KEY
 import com.example.currencyformater.common.Constants.BASE_URL
 import com.example.currencyformater.data.remote.CurrencyApi
-import com.example.currencyformater.data.repository.CurrencyRepositoryImpl
-import com.example.currencyformater.domain.respository.CurrencyRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
