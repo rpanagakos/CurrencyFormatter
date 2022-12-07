@@ -3,6 +3,8 @@ package com.example.currencyformater.di
 import com.example.currencyformater.common.Constants.API_KEY
 import com.example.currencyformater.common.Constants.BASE_URL
 import com.example.currencyformater.data.remote.CurrencyApi
+import com.example.currencyformater.data.repository.CurrencyRepositoryImpl
+import com.example.currencyformater.domain.respository.CurrencyRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,13 +37,11 @@ object AppModule {
                 val original = chain.request()
                 val originalHttpUrl = original.url
 
-
-                //Request customization: add request headers
                 val url = originalHttpUrl.newBuilder()
-                    .addQueryParameter("key", API_KEY)
                     .build()
 
                 val requestBuilder = original.newBuilder().url(url)
+                    .addHeader("apiKey", API_KEY)
                 val request = requestBuilder.build()
                 chain.proceed(request)
             }
