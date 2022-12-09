@@ -14,11 +14,11 @@ import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.domain.use_case.CurrencyUseCase
 import com.rdp.ghostium.di.DefaultDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -36,6 +36,7 @@ class MainViewModel @Inject constructor(
     }
 
     private var baseCurrency = START_CURRENCY
+    private var currentDate: String = ""
 
     private val _balancesList = MutableStateFlow<List<BalanceListingData>>(emptyList())
     val balancesList = _balancesList.asStateFlow()
@@ -46,8 +47,8 @@ class MainViewModel @Inject constructor(
     private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(listOf())
     val receiveCurrencies: State<List<CurrencyRateData>> = _receiveCurrencies
 
-    private val _amountWithoutCommission: MutableState<Double> = mutableStateOf(0.0)
-    val amountWithoutCommission: State<Double> = _amountWithoutCommission
+    private val _convertedAmount: MutableState<Double> = mutableStateOf(0.0)
+    val convertedAmount: State<Double> = _convertedAmount
 
     init {
         isFirstTimeInTheApp()
@@ -89,6 +90,7 @@ class MainViewModel @Inject constructor(
                 is UiState.Success -> {
                     rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
                     if (result.data != null) {
+                        currentDate = result.data.date
                         _currenciesRates.emit(result.data.rates)
                         _receiveCurrencies.value = result.data.rates
                     }
@@ -101,37 +103,73 @@ class MainViewModel @Inject constructor(
 
     fun changeBaseCurrency(currencyName: String) {
         baseCurrency = currencyName
+        resetReceiveCurrencies()
         getRates()
     }
 
     fun convertOnFlyTheAmount(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
         val newAmount = amount * toCurrency.rate
-        _amountWithoutCommission.value = newAmount
+        _convertedAmount.value = newAmount
     }
 
     fun submitConvert(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
         //need to check if he has this currency in his bank otherwise print
+        //I CAN ALSO VERIFY THAT FROM THE BALANCES LIST
         if (!currencyUseCase.hasThisCurrency(fromCurrency.name))
             return
         //calculate the new balances without the commission
         //probably the same with above one
 
-        //final amount with the commision
-        val euroRate =
-            if (fromCurrency.name == START_CURRENCY)
-                1.0
-            else
-                receiveCurrencies.value.find {
-                    it.name == START_CURRENCY
-                }?.rate ?: 1.0
+        //final amount with the commission
+        viewModelScope.launch(Dispatchers.Default) {
+            val euroRate =
+                if (fromCurrency.name == START_CURRENCY)
+                    1.0
+                else
+                    receiveCurrencies.value.find {
+                        it.name == START_CURRENCY
+                    }?.rate ?: 1.0
 
-        val finalAmount = transactionFee.calculateTheFinalTransactionFee(amount, euroRate, 15)
-        //need to check if it has the correct balance after the commission
+            val amountWithFee = amount + transactionFee.calculateTheFinalTransactionFee(amount, euroRate, getTheTransactionsForToday())
+            //need to check if it has the correct balance after the commission
+            val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
+            val finalAmount = balanceFromCurrency - amountWithFee
+            if (finalAmount > 0) {
+                //save the new currency  + old balance of it if it has
+                updateReceivedCurrency(toCurrency.name)
+                //plus +1 the transaction
+                // remove the amount  from fromCurrency
+                removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
+            } else {
+                //error message
+            }
 
-        //submit and save to db
+        }
+    }
+
+    private fun addOneMoreTransactionForToday() {
 
     }
 
+    private suspend fun updateReceivedCurrency(currencyName: String) {
+        val oldBalance = balancesList.value.find { it.name == currencyName }?.balance ?: 0.0
+        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, oldBalance + convertedAmount.value))
+    }
+
+    private suspend fun removeTheTotalAmountFromChosenCurrency(finalAmount: Double, currencyName: String) {
+        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, finalAmount))
+    }
+
+    private suspend fun getTheTransactionsForToday(): Int {
+        val job = viewModelScope.async {
+            return@async currencyUseCase.getTransactionsForToday(currentDate)
+        }
+        return job.await()
+    }
+
+    private fun resetReceiveCurrencies() {
+        _receiveCurrencies.value = emptyList()
+    }
 
     //this probably should move to an abstract class
     private fun rescheduleNextCall(repeatMillis: Long, call: () -> Unit): Job {

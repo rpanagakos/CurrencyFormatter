@@ -24,6 +24,7 @@ class CurrencyUseCase @Inject constructor(
 ) {
 
     private val balancesDao = generalDatabase.balancesDao
+    private val transactionsDao = generalDatabase.transactionsDao
 
     fun getRates(baseCurrency : String): Flow<UiState<ExchangeRateData>> = flow {
         try {
@@ -51,5 +52,10 @@ class CurrencyUseCase @Inject constructor(
 
     fun hasThisCurrency(name : String): Boolean {
        return balancesDao.hasThisCurrency(name)
+    }
+
+    suspend fun getTransactionsForToday(date : String) : Int {
+        val response = transactionsDao.getTransactionsForToday(date)
+        return response.times
     }
 }
