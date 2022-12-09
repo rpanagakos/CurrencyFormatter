@@ -2,7 +2,6 @@ package com.example.currencyformater.data.repository
 
 import com.example.currencyformater.data.remote.CurrencyApi
 import com.example.currencyformater.data.remote.dto.ExchangeRateDto
-import com.example.currencyformater.domain.model.CurrencyRate
 import com.example.currencyformater.domain.respository.CurrencyRepository
 import javax.inject.Inject
 

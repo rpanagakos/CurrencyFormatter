@@ -7,7 +7,7 @@ import com.google.gson.JsonObject
 data class ExchangeRateData(
     val base: String = "",
     val date: String = "",
-    val rates: List<CurrencyRate> = emptyList(),
+    val rates: List<CurrencyRateData> = emptyList(),
     val success: Boolean = true,
     val timestamp: Int = 0
 ) {
@@ -18,15 +18,15 @@ data class ExchangeRateData(
     )
 }
 
-private fun convertJsonObjectRatesToData(jsonObject: JsonObject): List<CurrencyRate> {
+private fun convertJsonObjectRatesToData(jsonObject: JsonObject): List<CurrencyRateData> {
     return try {
         val gson = Gson()
-        val mutableListRate: MutableList<CurrencyRate> = mutableListOf()
+        val mutableListRate: MutableList<CurrencyRateData> = mutableListOf()
         val data = jsonObject.toString()
         val map = gson.fromJson<Map<String, Double>>(data, MutableMap::class.java)
         map.forEach { (id, rate) ->
-            val currencyRate = CurrencyRate(id, rate.toDouble())
-            mutableListRate.add(currencyRate)
+            val currencyRateData = CurrencyRateData(id, rate.toDouble())
+            mutableListRate.add(currencyRateData)
         }
         mutableListRate
     } catch (e: java.lang.Exception) {
