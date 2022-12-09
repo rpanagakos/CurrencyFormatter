@@ -1,9 +1,13 @@
 package com.example.currencyformater.domain.use_case
 
 import com.example.currencyformater.common.UiState
+import com.example.currencyformater.data.local.BalancesDao
+import com.example.currencyformater.data.local.GeneralDatabase
+import com.example.currencyformater.data.local.TransactionsDao
 import com.example.currencyformater.domain.model.ExchangeRateData
 import com.example.currencyformater.domain.respository.CurrencyRepository
 import com.rdp.ghostium.di.IoDispatcher
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -12,8 +16,10 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
+@ViewModelScoped
 class CurrencyUseCase @Inject constructor(
     private val repository: CurrencyRepository,
+    private val generalDatabase: GeneralDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
 
