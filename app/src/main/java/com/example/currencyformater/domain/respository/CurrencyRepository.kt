@@ -6,5 +6,5 @@ import dagger.hilt.android.scopes.ActivityRetainedScoped
 @ActivityRetainedScoped
 interface CurrencyRepository {
 
-    suspend fun getLatestRates() : ExchangeRateDto
+    suspend fun getLatestRates(baseCurrency : String) : ExchangeRateDto
 }

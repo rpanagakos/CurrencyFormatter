@@ -25,10 +25,10 @@ class CurrencyUseCase @Inject constructor(
 
     private val balancesDao = generalDatabase.balancesDao
 
-    fun getRates(): Flow<UiState<ExchangeRateData>> = flow {
+    fun getRates(baseCurrency : String): Flow<UiState<ExchangeRateData>> = flow {
         try {
             emit(UiState.Loading<ExchangeRateData>())
-            val coins = repository.getLatestRates()
+            val coins = repository.getLatestRates(baseCurrency)
             emit(UiState.Success<ExchangeRateData>(ExchangeRateData(coins)))
         } catch (e: HttpException) {
             emit(UiState.Error<ExchangeRateData>(e.localizedMessage ?: "An unexpected error occured"))
@@ -48,4 +48,8 @@ class CurrencyUseCase @Inject constructor(
             data = response.map { BalanceListingData(it) } ?: emptyList()
         ))
     }.flowOn(ioDispatcher)
+
+    fun hasThisCurrency(name : String): Boolean {
+       return balancesDao.hasThisCurrency(name)
+    }
 }

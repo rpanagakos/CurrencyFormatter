@@ -1,5 +1,8 @@
 package com.example.currencyformater.presentation
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.currencyformater.common.UiState
@@ -27,11 +30,24 @@ class MainViewModel @Inject constructor(
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
+    companion object {
+        const val START_CURRENCY = "EUR"
+        const val INITIAL_BUDGET = 1000.0
+    }
+
+    private var baseCurrency = START_CURRENCY
+
     private val _balancesList = MutableStateFlow<List<BalanceListingData>>(emptyList())
     val balancesList = _balancesList.asStateFlow()
 
     private val _currenciesRates = MutableStateFlow<List<CurrencyRateData>>(emptyList())
     val currenciesRates = _currenciesRates.asStateFlow()
+
+    private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(listOf())
+    val receiveCurrencies: State<List<CurrencyRateData>> = _receiveCurrencies
+
+    private val _amountWithoutCommission: MutableState<Double> = mutableStateOf(0.0)
+    val amountWithoutCommission: State<Double> = _amountWithoutCommission
 
     init {
         isFirstTimeInTheApp()
@@ -51,7 +67,7 @@ class MainViewModel @Inject constructor(
 
     private fun addAppGiftMoneyDueToXmas() {
         viewModelScope.launch(defaultDispatcher) {
-            currencyUseCase.addMoneyToFirstUser(BalanceListingEntity("EUR", 1000.0))
+            currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
         }
     }
 
@@ -68,12 +84,14 @@ class MainViewModel @Inject constructor(
     }
 
     private fun getRates() {
-        currencyUseCase.getRates().onEach { result ->
+        currencyUseCase.getRates(baseCurrency).onEach { result ->
             when (result) {
                 is UiState.Success -> {
                     rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
-                    if (result.data != null)
+                    if (result.data != null) {
                         _currenciesRates.emit(result.data.rates)
+                        _receiveCurrencies.value = result.data.rates
+                    }
                 }
                 is UiState.Error -> {}
                 is UiState.Loading -> {}
@@ -81,9 +99,42 @@ class MainViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+    fun changeBaseCurrency(currencyName: String) {
+        baseCurrency = currencyName
+        getRates()
+    }
+
+    fun convertOnFlyTheAmount(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+        val newAmount = amount * toCurrency.rate
+        _amountWithoutCommission.value = newAmount
+    }
+
+    fun submitConvert(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+        //need to check if he has this currency in his bank otherwise print
+        if (!currencyUseCase.hasThisCurrency(fromCurrency.name))
+            return
+        //calculate the new balances without the commission
+        //probably the same with above one
+
+        //final amount with the commision
+        val euroRate =
+            if (fromCurrency.name == START_CURRENCY)
+                1.0
+            else
+                receiveCurrencies.value.find {
+                    it.name == START_CURRENCY
+                }?.rate ?: 1.0
+
+        val finalAmount = transactionFee.calculateTheFinalTransactionFee(amount, euroRate, 15)
+        //need to check if it has the correct balance after the commission
+
+        //submit and save to db
+
+    }
+
 
     //this probably should move to an abstract class
-    private fun rescheduleNextCall(repeatMillis : Long, call : () -> Unit) : Job {
+    private fun rescheduleNextCall(repeatMillis: Long, call: () -> Unit): Job {
         return viewModelScope.launch {
             delay(repeatMillis)
             call.invoke()

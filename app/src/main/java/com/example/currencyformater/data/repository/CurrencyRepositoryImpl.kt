@@ -9,7 +9,7 @@ class CurrencyRepositoryImpl @Inject constructor(
     private val api : CurrencyApi
 ) : CurrencyRepository{
 
-    override suspend fun getLatestRates(): ExchangeRateDto {
-        return api.getLatestRates()
+    override suspend fun getLatestRates(baseCurrency : String): ExchangeRateDto {
+        return api.getLatestRates(baseCurrency)
     }
 }
