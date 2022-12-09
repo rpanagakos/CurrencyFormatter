@@ -13,5 +13,5 @@ interface BalancesDao {
     suspend fun insertBalance(balanceListingEntity: BalanceListingEntity)
 
     @Query("SELECT * FROM balances_table ORDER BY id ASC")
-    fun fetchAllBalances(): Flow<MutableList<BalanceListingEntity>>
+    fun fetchAllBalances(): MutableList<BalanceListingEntity>
 }
