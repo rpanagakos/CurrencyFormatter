@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -16,6 +17,7 @@ import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.presentation.MainViewModel
 import com.example.currencyformater.presentation.components.BalancesSectionItem
 import com.example.currencyformater.presentation.components.CurrencyConverterSectionItem
+import com.example.currencyformater.presentation.components.DialogMessageItem
 import com.example.currencyformater.theme.LocalTheme
 
 @Composable
@@ -28,6 +30,8 @@ fun MainScreen(
     val balancesList = viewModel.balancesList.value
     val receiveCurrencies = viewModel.receiveCurrencies.value
     val convertedAmount = viewModel.convertedAmount.value
+    val errorMessage = viewModel.dialogMessage.collectAsState()
+    val displayDialog = viewModel.showDialog.value
 
     val changeBaseCurrency: (currencyName : String) -> Unit =
         remember(viewModel) {
@@ -51,6 +55,10 @@ fun MainScreen(
         }
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        if (displayDialog){
+            DialogMessageItem(message = errorMessage.value, onDismissRequest = viewModel::changeDialogStatus )
+        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

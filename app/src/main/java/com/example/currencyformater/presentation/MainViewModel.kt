@@ -13,14 +13,10 @@ import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.domain.use_case.CurrencyUseCase
-import com.example.currencyformater.presentation.MainViewModel.Companion.START_CURRENCY
 import com.rdp.ghostium.di.DefaultDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -48,12 +44,19 @@ class MainViewModel @Inject constructor(
     private val _currenciesRates: MutableState<List<CurrencyRateData>> = mutableStateOf(emptyList())
     val currenciesRates: State<List<CurrencyRateData>> = _currenciesRates
 
+    private val _showDialog: MutableState<Boolean> = mutableStateOf(false)
+    val showDialog: State<Boolean> = _showDialog
+
+    private val _dialogMessage = MutableStateFlow<String>("")
+    val dialogMessage = _dialogMessage.asStateFlow()
+
     private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(
         listOf(
+            CurrencyRateData("GBP", 0.864015),
             CurrencyRateData("EUR", 1.0),
             CurrencyRateData("AED", 3.845625),
-            CurrencyRateData("AFN", 92.246443),
-            CurrencyRateData("GBP", 0.864015)
+            CurrencyRateData("AFN", 92.246443)
+
         )
     )
     val receiveCurrencies: State<List<CurrencyRateData>> = _receiveCurrencies
@@ -127,43 +130,61 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun submitConvert(amount : String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+    fun submitConvert(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
         //need to check if he has this currency in his bank otherwise print
         //I CAN ALSO VERIFY THAT FROM THE BALANCES LIST
-        viewModelScope.launch(Dispatchers.Default) {
-            if (!currencyUseCase.hasThisCurrency(fromCurrency.name))
-                return@launch
+        try {
+            viewModelScope.launch(Dispatchers.Default) {
+                if (!currencyUseCase.hasThisCurrency(fromCurrency.name)) {
+                    displayErrorMessage("You don't have available balance for ${fromCurrency.name}")
+                    return@launch
+                }
 
 
-            val euroRate =
-                if (fromCurrency.name == START_CURRENCY)
-                    1.0
-                else
-                    receiveCurrencies.value.find {
-                        it.name == START_CURRENCY
-                    }?.rate ?: 1.0
+                val euroRate =
+                    if (fromCurrency.name == START_CURRENCY)
+                        1.0
+                    else
+                        receiveCurrencies.value.find {
+                            it.name == START_CURRENCY
+                        }?.rate ?: 1.0
 
-            val transactionsForToday =
-                if (currencyUseCase.hasTransactionsForToday(currentDate))
-                    getTheTransactionsForToday()
-                else
-                    0
-            val amountWithFee = amount.toDouble() + transactionFee.calculateTheFinalTransactionFee(amount.toDouble(), euroRate, transactionsForToday)
-            //need to check if it has the correct balance after the commission
-            val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
-            val finalAmount = balanceFromCurrency - amountWithFee
-            if (finalAmount > 0) {
-                //save the new currency  + old balance of it if it has
-                updateReceivedCurrency(toCurrency.name)
-                // remove the amount  from fromCurrency
-                removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
-                //plus +1 the transaction
-                addOneMoreTransactionForToday(transactionsForToday + 1)
-            } else {
-                //error message
+                val transactionsForToday =
+                    if (currencyUseCase.hasTransactionsForToday(currentDate))
+                        getTheTransactionsForToday()
+                    else
+                        0
+                val amountWithFee = amount.toDouble() + transactionFee.calculateTheFinalTransactionFee(amount.toDouble(), euroRate, transactionsForToday)
+                //need to check if it has the correct balance after the commission
+                val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
+                val finalAmount = balanceFromCurrency - amountWithFee
+                if (finalAmount > 0) {
+                    //save the new currency  + old balance of it if it has
+                    updateReceivedCurrency(toCurrency.name)
+                    // remove the amount  from fromCurrency
+                    removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
+                    //plus +1 the transaction
+                    addOneMoreTransactionForToday(transactionsForToday + 1)
+                } else {
+                    //error message
+                    displayErrorMessage("You don't have enough my money to ${fromCurrency.name} balance")
+                }
+
             }
-
+        } catch (e: java.lang.Exception) {
+            displayErrorMessage("Something went wrong! Please check the amount you entered")
         }
+    }
+
+    private fun displayErrorMessage(errorMessage: String) {
+        viewModelScope.launch {
+            _dialogMessage.emit(errorMessage)
+            changeDialogStatus()
+        }
+    }
+
+    fun changeDialogStatus(){
+        _showDialog.value = !showDialog.value
     }
 
     private suspend fun addOneMoreTransactionForToday(totalTransaction: Int) {
