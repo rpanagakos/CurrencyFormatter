@@ -1,5 +1,6 @@
 package com.example.currencyformater.presentation.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -17,10 +18,9 @@ fun HeaderTitleItem(
     textColor: Color,
     textStyle: TextStyle
 ) {
-    Surface(modifier = modifier) {
+    Box(modifier = modifier) {
         Text(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             text = title,
             style = textStyle,
             color = textColor

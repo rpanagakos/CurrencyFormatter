@@ -52,9 +52,9 @@ class MainViewModel @Inject constructor(
     val convertedAmount: State<Double> = _convertedAmount
 
     init {
-        isFirstTimeInTheApp()
+       /* isFirstTimeInTheApp()
         getUserBalances()
-        getRates()
+        getRates()*/
     }
 
     private fun isFirstTimeInTheApp() {
