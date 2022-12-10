@@ -12,8 +12,8 @@ interface BalancesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBalance(balanceListingEntity: BalanceListingEntity)
 
-    @Query("SELECT * FROM balances_table ORDER BY id ASC")
-    fun fetchAllBalances(): MutableList<BalanceListingEntity>
+    @Query("SELECT * FROM balances_table ORDER BY name ASC")
+    fun fetchAllBalances(): Flow<MutableList<BalanceListingEntity>>
 
     @Query("SELECT EXISTS(SELECT * FROM balances_table WHERE name = :name)")
     fun hasThisCurrency(name : String) : Boolean

@@ -23,7 +23,7 @@ fun CurrencyConverterSectionItem(
     headerTextStyle: TextStyle,
     amountConverted: String,
     currencies: List<CurrencyRateData>,
-    submitTransaction: (fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit,
+    submitTransaction: (amount : String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit,
     amountEntered: (amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit,
     changeBaseCurrency: (currencyName: String) -> Unit
 ) {
@@ -117,7 +117,7 @@ fun CurrencyConverterSectionItem(
             textColor = LocalTheme.colors.White,
             textStyle = LocalTheme.typography.BOLD_14_MONT
         ) {
-            submitTransaction(currencyFrom.value, currencyTo.value)
+            submitTransaction(amount.value, currencyFrom.value, currencyTo.value)
         }
     }
 
@@ -135,7 +135,7 @@ private fun CurrencyConverterSectionItemPreview() {
             CurrencyRateData("EUR", 1.3),
             CurrencyRateData("EUR", 1.3)
         ),
-        submitTransaction = { fromCurrency, toCurrency ->
+        submitTransaction = {amount, fromCurrency, toCurrency ->
 
         }, amountEntered = { _, _, _ ->
 

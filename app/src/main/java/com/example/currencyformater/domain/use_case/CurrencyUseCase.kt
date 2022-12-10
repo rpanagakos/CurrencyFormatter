@@ -4,7 +4,6 @@ import com.example.currencyformater.common.UiState
 import com.example.currencyformater.data.local.BalanceListingEntity
 import com.example.currencyformater.data.local.GeneralDatabase
 import com.example.currencyformater.data.local.UserTransactionsEntity
-import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.ExchangeRateData
 import com.example.currencyformater.domain.respository.CurrencyRepository
 import com.rdp.ghostium.di.IoDispatcher
@@ -43,21 +42,19 @@ class CurrencyUseCase @Inject constructor(
         balancesDao.insertBalance(balanceListingEntity)
     }
 
-    fun getBalances(): Flow<UiState<List<BalanceListingData>>> = flow {
-        emit(UiState.Loading<List<BalanceListingData>>())
-        val response = balancesDao.fetchAllBalances()
-        emit(UiState.Success<List<BalanceListingData>>(
-            data = response.map { BalanceListingData(it) } ?: emptyList()
-        ))
-    }.flowOn(ioDispatcher)
+    val getBalances : Flow<List<BalanceListingEntity>> = balancesDao.fetchAllBalances()
 
     fun hasThisCurrency(name : String): Boolean {
        return balancesDao.hasThisCurrency(name)
     }
 
+    fun hasTransactionsForToday(date: String): Boolean {
+        return transactionsDao.hasTransactionsForToday(date)
+    }
+
     suspend fun getTransactionsForToday(date : String) : Int {
         val response = transactionsDao.getTransactionsForToday(date)
-        return response.times
+        return response?.times ?: 0
     }
 
     suspend fun addOneMoreTransactionForToday(transactionsEntity: UserTransactionsEntity){

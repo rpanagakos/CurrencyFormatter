@@ -13,4 +13,7 @@ interface TransactionsDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateTransactions(userTransactionsEntity: UserTransactionsEntity)
+
+    @Query("SELECT EXISTS(SELECT * FROM transactions_table WHERE date = :date)")
+    fun hasTransactionsForToday(date : String) : Boolean
 }

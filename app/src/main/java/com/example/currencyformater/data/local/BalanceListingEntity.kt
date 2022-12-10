@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "balances_table")
 data class BalanceListingEntity(
+    @PrimaryKey(autoGenerate = false)
     val name: String,
-    val balance: Double,
-    @PrimaryKey val id: Int? = null
+    val balance: Double
 )

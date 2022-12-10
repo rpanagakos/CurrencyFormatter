@@ -32,7 +32,7 @@ class TransactionFeeImpl @Inject constructor(
     }
 
     private fun hasUserExceededFreeTransaction(): Boolean {
-        return preferences.getTransactionsFromShared() > FREE_TRANSACTIONS
+        return preferences.getTransactionsFromShared() >= FREE_TRANSACTIONS
     }
 
 
@@ -45,18 +45,8 @@ class TransactionFeeImpl @Inject constructor(
         EXTRA(Int.MAX_VALUE, 1.2, 0.3);
 
         companion object {
-            fun getFromTransactionTimes(value: Int) = values().first { it.value <= value }
+            fun getFromTransactionTimes(value: Int) = values().first { value <= it.value }
         }
     }
-
-    /*
-    IN CASE SOMETHING BREAKS ABOVE
-    if (userHasCompletedAbove15Transactions()) {
-            feeRate = 1.2
-            extraFee = 0.3 * currencyRate
-        } else {
-            feeRate = 0.7
-        }
-        return ((amount * feeRate) / 100) + extraFee*/
 
 }

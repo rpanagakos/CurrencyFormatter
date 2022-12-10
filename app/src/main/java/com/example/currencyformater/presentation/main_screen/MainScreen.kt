@@ -36,10 +36,10 @@ fun MainScreen(
             }
         }
 
-    val submitTransaction: (fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
+    val submitTransaction: (amount : String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
         remember(viewModel) {
-            { fromCurrency, toCurrency ->
-                viewModel.submitConvert(fromCurrency, toCurrency)
+            {amount, fromCurrency, toCurrency ->
+                viewModel.submitConvert(amount,fromCurrency, toCurrency)
             }
         }
 

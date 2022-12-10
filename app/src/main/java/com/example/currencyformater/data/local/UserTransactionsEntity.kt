@@ -6,6 +6,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "transactions_table")
 data class UserTransactionsEntity(
     @PrimaryKey(autoGenerate = false)
-    val date : String,
-    val times : Int
+    val date : String = "",
+    val times : Int = 0
 )
