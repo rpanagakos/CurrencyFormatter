@@ -39,13 +39,18 @@ class MainViewModel @Inject constructor(
     private var baseCurrency = START_CURRENCY
     private var currentDate: String = ""
 
-    private val _balancesList = MutableStateFlow<List<BalanceListingData>>(emptyList())
-    val balancesList = _balancesList.asStateFlow()
+    private val _balancesList : MutableState<List<BalanceListingData>> = mutableStateOf(emptyList())
+    val balancesList : State<List<BalanceListingData>> = _balancesList
 
-    private val _currenciesRates = MutableStateFlow<List<CurrencyRateData>>(emptyList())
-    val currenciesRates = _currenciesRates.asStateFlow()
+    private val _currenciesRates : MutableState<List<CurrencyRateData>> = mutableStateOf(emptyList())
+    val currenciesRates : State<List<CurrencyRateData>>   = _currenciesRates
 
-    private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(listOf())
+    private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(listOf(
+        CurrencyRateData("EUR", 1.0),
+        CurrencyRateData("AED", 3.845625),
+        CurrencyRateData("AFN", 92.246443),
+        CurrencyRateData("GBP", 0.864015)
+    ))
     val receiveCurrencies: State<List<CurrencyRateData>> = _receiveCurrencies
 
     private val _convertedAmount: MutableState<Double> = mutableStateOf(0.0)
@@ -55,6 +60,7 @@ class MainViewModel @Inject constructor(
        /* isFirstTimeInTheApp()
         getUserBalances()
         getRates()*/
+        getRates()
     }
 
     private fun isFirstTimeInTheApp() {
@@ -78,7 +84,7 @@ class MainViewModel @Inject constructor(
             when (result) {
                 is UiState.Success -> {
                     if (result.data != null)
-                        _balancesList.emit(result.data)
+                        _balancesList.value = result.data
                 }
                 else -> return@onEach
             }
@@ -92,8 +98,8 @@ class MainViewModel @Inject constructor(
                     rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
                     if (result.data != null) {
                         currentDate = result.data.date
-                        _currenciesRates.emit(result.data.rates)
-                        _receiveCurrencies.value = result.data.rates
+                        _currenciesRates.value = result.data.rates
+                        _receiveCurrencies.value = listOf(CurrencyRateData(baseCurrency, 1.0)) + result.data.rates
                     }
                 }
                 is UiState.Error -> {}
@@ -108,12 +114,19 @@ class MainViewModel @Inject constructor(
         getRates()
     }
 
-    fun convertOnFlyTheAmount(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
-        val newAmount = amount * toCurrency.rate
-        _convertedAmount.value = newAmount
+    fun convertOnFlyTheAmount(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+        if (amount.isEmpty()) {
+            _convertedAmount.value = 0.0
+            return
+        }
+        viewModelScope.launch {
+            delay(300)
+            val newAmount = amount.toDouble() * toCurrency.rate
+            _convertedAmount.value = newAmount
+        }
     }
 
-    fun submitConvert(amountWithoutFee: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+    fun submitConvert(fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
         //need to check if he has this currency in his bank otherwise print
         //I CAN ALSO VERIFY THAT FROM THE BALANCES LIST
         if (!currencyUseCase.hasThisCurrency(fromCurrency.name))
@@ -129,7 +142,7 @@ class MainViewModel @Inject constructor(
                     }?.rate ?: 1.0
 
             val transactionsForToday = getTheTransactionsForToday()
-            val amountWithFee = amountWithoutFee + transactionFee.calculateTheFinalTransactionFee(amountWithoutFee, euroRate, transactionsForToday)
+            val amountWithFee = convertedAmount.value + transactionFee.calculateTheFinalTransactionFee(convertedAmount.value, euroRate, transactionsForToday)
             //need to check if it has the correct balance after the commission
             val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
             val finalAmount = balanceFromCurrency - amountWithFee

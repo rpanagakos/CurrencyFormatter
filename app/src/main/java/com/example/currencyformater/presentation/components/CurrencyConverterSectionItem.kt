@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -19,8 +21,30 @@ fun CurrencyConverterSectionItem(
     headerText: String,
     headerTextColor: Color,
     headerTextStyle: TextStyle,
-    currencies: List<CurrencyRateData>
+    amountConverted: String,
+    currencies: List<CurrencyRateData>,
+    submitTransaction: (fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit,
+    amountEntered: (amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit,
+    changeBaseCurrency: (currencyName: String) -> Unit
 ) {
+
+    var currencyFrom = remember {
+        if (currencies.isNotEmpty())
+            mutableStateOf(currencies[0])
+        else
+            mutableStateOf(CurrencyRateData())
+    }
+
+    var currencyTo = remember {
+        if (currencies.isNotEmpty())
+            mutableStateOf(currencies[0])
+        else
+            mutableStateOf(CurrencyRateData())
+    }
+
+    var amount = remember {
+        mutableStateOf("")
+    }
 
     ConstraintLayout(
         modifier = modifier
@@ -56,17 +80,26 @@ fun CurrencyConverterSectionItem(
                     imageResource = R.drawable.ic_baseline_arrow_upward_24,
                     currencies = currencies,
                     title = "Sell",
-                    onSellAmountChange = {},
-                    onCurrencyChange = {})
-                SellCurrencyItem(
+                    onSellAmountChange = {
+                        amount.value = it
+                        amountEntered(it, currencyFrom.value, currencyTo.value)
+
+                    },
+                    onCurrencyChange = {
+                        currencyFrom.value = it
+                        changeBaseCurrency(it.name)
+                    })
+                ReceiveCurrencyItem(
+                    modifier = Modifier.padding(top = LocalTheme.spacing.padding_16dp, bottom = LocalTheme.spacing.padding_16dp),
                     imageBackgroundColor = LocalTheme.colors.MaximumGreen,
                     imageResource = R.drawable.ic_baseline_arrow_downward_24,
-                    textFieldEnabled = false,
-                    initialText = "",
+                    amountConverted = amountConverted,
                     title = "Receive",
                     currencies = currencies,
-                    onSellAmountChange = {},
-                    onCurrencyChange = {})
+                    onCurrencyChange = {
+                        currencyTo.value = it
+                        amountEntered(amount.value, currencyFrom.value, currencyTo.value)
+                    })
 
             }
         }
@@ -84,7 +117,7 @@ fun CurrencyConverterSectionItem(
             textColor = LocalTheme.colors.White,
             textStyle = LocalTheme.typography.BOLD_14_MONT
         ) {
-
+            submitTransaction(currencyFrom.value, currencyTo.value)
         }
     }
 
@@ -96,11 +129,19 @@ fun CurrencyConverterSectionItem(
 private fun CurrencyConverterSectionItemPreview() {
     CurrencyConverterSectionItem(
         headerText = "Convert your currencies", headerTextColor = LocalTheme.colors.WarmBlack,
+        amountConverted = "",
         headerTextStyle = LocalTheme.typography.BOLD_12_MONT, currencies = listOf(
             CurrencyRateData("EUR", 1.3),
             CurrencyRateData("EUR", 1.3),
             CurrencyRateData("EUR", 1.3)
-        )
+        ),
+        submitTransaction = { fromCurrency, toCurrency ->
+
+        }, amountEntered = { _, _, _ ->
+
+        }, changeBaseCurrency = {
+
+        }
     )
 
 }
