@@ -16,7 +16,8 @@ class Colors(
     val MountainMeadow: Color = Color(0xFF09BC8A),
     val Platinum: Color = Color(0xFFE5E5E5),
     val MaximumGreen: Color = Color(0xFF679436),
-    val OrangePantone: Color = Color(0xFFFF5400)
+    val OrangePantone: Color = Color(0xFFFF5400),
+    val BlueDeFrance : Color = Color(0xFF008BF8)
 )
 
 internal val LocalColors = staticCompositionLocalOf { Colors() }

@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.currencyformater.R
+import com.example.currencyformater.common.annotations.DevicePreview
 import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.theme.LocalTheme
 
@@ -30,8 +32,8 @@ fun SellCurrencyItem(
     modifier: Modifier = Modifier,
     imageBackgroundColor: Color,
     imageResource: Int,
-    textFieldEnabled : Boolean,
-    initialText : String = "0.0",
+    textFieldEnabled : Boolean = true,
+    initialText : String = "Enter amount",
     currencies: List<CurrencyRateData>,
     onSellAmountChange: (String) -> Unit,
     onCurrencyChange: (CurrencyRateData) -> Unit
@@ -62,6 +64,7 @@ fun SellCurrencyItem(
             },
             placeholder = {
                 Text(
+                    modifier = Modifier.fillMaxWidth(),
                     style = LocalTheme.typography.ITALIC_16_MONT,
                     text = initialText
                 )
@@ -100,7 +103,7 @@ private fun SellCurrencyItemPreview() {
 }
 
 @Composable
-@Preview
+@DevicePreview
 private fun ReceiveCurrencyItemPreview() {
     SellCurrencyItem(
         modifier = Modifier.background(color = LocalTheme.colors.White),
