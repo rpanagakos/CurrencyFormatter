@@ -17,6 +17,7 @@ import com.example.currencyformater.theme.LocalTheme
 
 @Composable
 fun BalancesSectionItem(
+    modifier: Modifier = Modifier,
     headerText: String,
     headerTextColor: Color,
     headerTextStyle: TextStyle,
@@ -25,22 +26,32 @@ fun BalancesSectionItem(
 
     val parentWidthfraction = remember {
         derivedStateOf {
-            if (balances.size ==1)
+            if (balances.size == 1)
                 1f
             else
                 0.33f
         }
     }
 
-    val state : LazyListState = rememberLazyListState()
+    val state: LazyListState = rememberLazyListState()
 
-    Column {
-        HeaderTitleItem(title = headerText, textColor = headerTextColor, textStyle = headerTextStyle)
+    Column(
+        modifier = modifier
+    ) {
+        HeaderTitleItem(
+            modifier = Modifier.padding(start = LocalTheme.spacing.padding_16dp),
+            title = headerText,
+            textColor = headerTextColor,
+            textStyle = headerTextStyle)
         Spacer(modifier = Modifier.height(LocalTheme.spacing.padding_8dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             state = state,
-            horizontalArrangement = Arrangement.spacedBy(LocalTheme.spacing.padding_12dp)
+            horizontalArrangement = Arrangement.spacedBy(LocalTheme.spacing.padding_12dp),
+            contentPadding = PaddingValues(
+                start = LocalTheme.spacing.padding_16dp,
+                end = LocalTheme.spacing.padding_16dp
+            )
         ) {
             items(balances) { item ->
                 BalanceItem(

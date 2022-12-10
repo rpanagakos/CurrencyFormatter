@@ -1,13 +1,11 @@
 package com.example.currencyformater.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -51,35 +49,37 @@ fun DropDownCurrenciesMenuItem(
             .wrapContentSize(Alignment.TopStart)
             .defaultMinSize(minWidth = 76.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .background(
-                    color = LocalTheme.colors.White,
-                    shape = RoundedCornerShape(LocalTheme.radius.radius_6dp)
+        Card(border = BorderStroke(1.dp, LocalTheme.colors.Platinum)) {
+            Row(
+                modifier = Modifier
+                    .background(
+                        color = LocalTheme.colors.White,
+                        shape = RoundedCornerShape(LocalTheme.radius.radius_6dp)
+                    )
+                    .clickable(
+                        onClick = { expanded.value = true }
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    modifier = Modifier.padding(
+                        start = LocalTheme.spacing.padding_6dp
+                    ),
+                    text = listMenu[selectedIndex.value].name,
+                    style = LocalTheme.typography.REGULAR_14_MONT,
+                    color = LocalTheme.colors.WarmBlack
                 )
-                .clickable(
-                    onClick = { expanded.value = true }
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                modifier = Modifier.padding(
-                    start = LocalTheme.spacing.padding_6dp
-                ),
-                text = listMenu[selectedIndex.value].name,
-                style = LocalTheme.typography.REGULAR_14_MONT,
-                color = LocalTheme.colors.WarmBlack
-            )
 
-            Icon(
-                modifier = Modifier.padding(
-                    start = LocalTheme.spacing.padding_4dp,
-                    end = LocalTheme.spacing.padding_6dp
-                ),
-                imageVector = icon.value,
-                contentDescription = "Currencies List"
-            )
+                Icon(
+                    modifier = Modifier.padding(
+                        start = LocalTheme.spacing.padding_4dp,
+                        end = LocalTheme.spacing.padding_6dp
+                    ),
+                    imageVector = icon.value,
+                    contentDescription = "Currencies List"
+                )
+            }
         }
 
         DropdownMenu(

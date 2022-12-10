@@ -15,6 +15,7 @@ import com.example.currencyformater.theme.LocalTheme
 
 @Composable
 fun CurrencyConverterSectionItem(
+    modifier: Modifier = Modifier,
     headerText: String,
     headerTextColor: Color,
     headerTextStyle: TextStyle,
@@ -22,7 +23,7 @@ fun CurrencyConverterSectionItem(
 ) {
 
     ConstraintLayout(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .wrapContentSize()
     ) {
@@ -46,21 +47,23 @@ fun CurrencyConverterSectionItem(
                     .padding(
                         start = LocalTheme.spacing.padding_8dp,
                         end = LocalTheme.spacing.padding_8dp,
-                        top = LocalTheme.spacing.padding_16dp,
+                        top = LocalTheme.spacing.padding_8dp,
                         bottom = LocalTheme.spacing.padding_26dp
                     )
             ) {
                 SellCurrencyItem(
-                    imageBackgroundColor = LocalTheme.colors.MaximumGreen,
+                    imageBackgroundColor = LocalTheme.colors.ImperialRed,
                     imageResource = R.drawable.ic_baseline_arrow_upward_24,
                     currencies = currencies,
+                    title = "Sell",
                     onSellAmountChange = {},
                     onCurrencyChange = {})
                 SellCurrencyItem(
-                    imageBackgroundColor = LocalTheme.colors.OrangePantone,
+                    imageBackgroundColor = LocalTheme.colors.MaximumGreen,
                     imageResource = R.drawable.ic_baseline_arrow_downward_24,
                     textFieldEnabled = false,
                     initialText = "",
+                    title = "Receive",
                     currencies = currencies,
                     onSellAmountChange = {},
                     onCurrencyChange = {})
@@ -77,7 +80,7 @@ fun CurrencyConverterSectionItem(
             },
             text = "Convert Amount",
             buttonShape = RoundedCornerShape(LocalTheme.radius.radius_16dp),
-            buttonColor = LocalTheme.colors.BlueDeFrance,
+            buttonColor = LocalTheme.colors.TiffanyBlue,
             textColor = LocalTheme.colors.White,
             textStyle = LocalTheme.typography.BOLD_14_MONT
         ) {

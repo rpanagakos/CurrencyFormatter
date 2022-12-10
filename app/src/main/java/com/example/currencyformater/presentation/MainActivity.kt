@@ -1,23 +1,34 @@
 package com.example.currencyformater.presentation
 
 import android.os.Bundle
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import com.example.currencyformater.R
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material.Surface
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.currencyformater.presentation.main_screen.MainScreen
+import com.example.currencyformater.theme.LocalTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
-
-    val viewModel: MainViewModel by viewModels()
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        //viewModel.getRates()
+        setContent {
+            LocalTheme {
+                Surface(color = LocalTheme.colors.Gunmetal) {
+                    val navController = rememberNavController()
+                    NavHost(navController = navController, startDestination = Screen.MainScreen.route) {
+                        composable(
+                            route = Screen.MainScreen.route
+                        ){
+                            MainScreen(navController = navController)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
