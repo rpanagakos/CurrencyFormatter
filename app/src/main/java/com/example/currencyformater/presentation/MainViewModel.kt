@@ -9,6 +9,7 @@ import com.example.currencyformater.common.UiState
 import com.example.currencyformater.common.fees.TransactionFee
 import com.example.currencyformater.common.preferences.Preferences
 import com.example.currencyformater.data.local.BalanceListingEntity
+import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.domain.use_case.CurrencyUseCase
@@ -112,15 +113,12 @@ class MainViewModel @Inject constructor(
         _convertedAmount.value = newAmount
     }
 
-    fun submitConvert(amount: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
+    fun submitConvert(amountWithoutFee: Double, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
         //need to check if he has this currency in his bank otherwise print
         //I CAN ALSO VERIFY THAT FROM THE BALANCES LIST
         if (!currencyUseCase.hasThisCurrency(fromCurrency.name))
             return
-        //calculate the new balances without the commission
-        //probably the same with above one
 
-        //final amount with the commission
         viewModelScope.launch(Dispatchers.Default) {
             val euroRate =
                 if (fromCurrency.name == START_CURRENCY)
@@ -130,7 +128,8 @@ class MainViewModel @Inject constructor(
                         it.name == START_CURRENCY
                     }?.rate ?: 1.0
 
-            val amountWithFee = amount + transactionFee.calculateTheFinalTransactionFee(amount, euroRate, getTheTransactionsForToday())
+            val transactionsForToday = getTheTransactionsForToday()
+            val amountWithFee = amountWithoutFee + transactionFee.calculateTheFinalTransactionFee(amountWithoutFee, euroRate, transactionsForToday)
             //need to check if it has the correct balance after the commission
             val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
             val finalAmount = balanceFromCurrency - amountWithFee
@@ -138,6 +137,7 @@ class MainViewModel @Inject constructor(
                 //save the new currency  + old balance of it if it has
                 updateReceivedCurrency(toCurrency.name)
                 //plus +1 the transaction
+                addOneMoreTransactionForToday(transactionsForToday + 1)
                 // remove the amount  from fromCurrency
                 removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
             } else {
@@ -147,8 +147,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun addOneMoreTransactionForToday() {
-
+    private suspend fun addOneMoreTransactionForToday(totalTransaction : Int) {
+        currencyUseCase.addOneMoreTransactionForToday(UserTransactionsEntity(currentDate, totalTransaction))
     }
 
     private suspend fun updateReceivedCurrency(currencyName: String) {

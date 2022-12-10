@@ -3,6 +3,7 @@ package com.example.currencyformater.domain.use_case
 import com.example.currencyformater.common.UiState
 import com.example.currencyformater.data.local.BalanceListingEntity
 import com.example.currencyformater.data.local.GeneralDatabase
+import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.ExchangeRateData
 import com.example.currencyformater.domain.respository.CurrencyRepository
@@ -57,5 +58,9 @@ class CurrencyUseCase @Inject constructor(
     suspend fun getTransactionsForToday(date : String) : Int {
         val response = transactionsDao.getTransactionsForToday(date)
         return response.times
+    }
+
+    suspend fun addOneMoreTransactionForToday(transactionsEntity: UserTransactionsEntity){
+        transactionsDao.updateTransactions(transactionsEntity)
     }
 }
