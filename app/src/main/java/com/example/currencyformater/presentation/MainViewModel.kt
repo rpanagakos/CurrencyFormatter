@@ -114,7 +114,6 @@ class MainViewModel @Inject constructor(
 
     fun changeBaseCurrency(currencyName: String) {
         baseCurrency = currencyName
-        resetReceiveCurrencies()
         getRates()
     }
 
@@ -131,10 +130,13 @@ class MainViewModel @Inject constructor(
     }
 
     fun submitConvert(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
-        //need to check if he has this currency in his bank otherwise print
-        //I CAN ALSO VERIFY THAT FROM THE BALANCES LIST
         try {
             viewModelScope.launch(Dispatchers.Default) {
+                if (fromCurrency.name == toCurrency.name) {
+                    displayErrorMessage("You have same  currency in both fields: ${fromCurrency.name}")
+                    return@launch
+                }
+
                 if (!currencyUseCase.hasThisCurrency(fromCurrency.name)) {
                     displayErrorMessage("You don't have available balance for ${fromCurrency.name}")
                     return@launch
@@ -183,7 +185,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun changeDialogStatus(){
+    fun changeDialogStatus() {
         _showDialog.value = !showDialog.value
     }
 
@@ -205,10 +207,6 @@ class MainViewModel @Inject constructor(
             return@async currencyUseCase.getTransactionsForToday(currentDate)
         }
         return job.await()
-    }
-
-    private fun resetReceiveCurrencies() {
-        _receiveCurrencies.value = emptyList()
     }
 
     //this probably should move to an abstract class
