@@ -21,9 +21,9 @@ fun BalanceItem(
     Column(
         modifier = modifier
             .background(
-            color = LocalTheme.colors.White,
-            shape = RoundedCornerShape(LocalTheme.radius.radius_8dp)
-        )
+                color = LocalTheme.colors.White,
+                shape = RoundedCornerShape(LocalTheme.radius.radius_8dp)
+            )
             .defaultMinSize(minWidth = 80.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -56,6 +56,6 @@ fun BalanceItem(
 
 @Composable
 @DevicePreview
-fun BalanceItemPreview(){
+fun BalanceItemPreview() {
     BalanceItem(priceBalance = "1200$", currencyBalance = "USD")
 }

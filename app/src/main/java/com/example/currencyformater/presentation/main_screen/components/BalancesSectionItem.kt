@@ -6,9 +6,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -33,7 +30,8 @@ fun BalancesSectionItem(
             modifier = Modifier.padding(start = LocalTheme.spacing.padding_16dp),
             title = headerText,
             textColor = headerTextColor,
-            textStyle = headerTextStyle)
+            textStyle = headerTextStyle
+        )
         Spacer(modifier = Modifier.height(LocalTheme.spacing.padding_8dp))
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
@@ -47,7 +45,7 @@ fun BalancesSectionItem(
             items(balances) { item ->
                 BalanceItem(
                     modifier = Modifier
-                        .fillParentMaxWidth( if (balances.size == 1) 1f else 0.33f),
+                        .fillParentMaxWidth(if (balances.size == 1) 1f else 0.33f),
                     priceBalance = item.balance.toString(),
                     currencyBalance = item.name
                 )

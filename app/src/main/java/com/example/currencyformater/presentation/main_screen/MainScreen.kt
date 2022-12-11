@@ -37,21 +37,21 @@ fun MainScreen(
     val errorMessage = viewModel.dialogMessage.value
     val displayDialog = viewModel.showDialog.value
 
-    val changeBaseCurrency: (currencyName : String) -> Unit =
+    val changeBaseCurrency: (currencyName: String) -> Unit =
         remember(viewModel) {
             { currencyName ->
                 viewModel.changeBaseCurrency(currencyName)
             }
         }
 
-    val submitTransaction: (amount : String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
+    val submitTransaction: (amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
         remember(viewModel) {
-            {amount, fromCurrency, toCurrency ->
-                viewModel.submitConvert(amount,fromCurrency, toCurrency)
+            { amount, fromCurrency, toCurrency ->
+                viewModel.submitConvert(amount, fromCurrency, toCurrency)
             }
         }
 
-    val amountEntered : (amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
+    val amountEntered: (amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) -> Unit =
         remember(viewModel) {
             { amount, fromCurrency, toCurrency ->
                 viewModel.convertOnFlyTheAmount(amount, fromCurrency, toCurrency)
@@ -81,8 +81,8 @@ fun MainScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        if (displayDialog){
-            DialogMessageItem(message = errorMessage, onDismissRequest = viewModel::changeDialogStatus )
+        if (displayDialog) {
+            DialogMessageItem(message = errorMessage, onDismissRequest = viewModel::changeDialogStatus)
         }
 
         LazyColumn(

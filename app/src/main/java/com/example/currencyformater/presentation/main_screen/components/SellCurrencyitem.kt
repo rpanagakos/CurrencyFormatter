@@ -31,7 +31,7 @@ fun SellCurrencyItem(
     title: String,
     textFieldEnabled: Boolean = true,
     initialText: String = "Enter amount",
-    amountEntered : String = "",
+    amountEntered: String = "",
     currencies: List<CurrencyRateData>,
     onSellAmountChange: (String) -> Unit,
     onCurrencyChange: (CurrencyRateData) -> Unit

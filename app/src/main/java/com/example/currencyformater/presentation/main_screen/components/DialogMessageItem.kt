@@ -16,7 +16,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.example.currencyformater.R
 import com.example.currencyformater.theme.LocalTheme
-import kotlinx.coroutines.NonDisposableHandle.parent
 
 @Composable
 fun DialogMessageItem(
