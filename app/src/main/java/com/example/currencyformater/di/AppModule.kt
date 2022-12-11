@@ -1,6 +1,6 @@
 package com.example.currencyformater.di
 
-import android.content.Context
+import android.app.Application
 import androidx.room.Room
 import com.example.currencyformater.common.Constants.API_KEY
 import com.example.currencyformater.common.Constants.APP_DATABASE
@@ -10,7 +10,6 @@ import com.example.currencyformater.data.remote.CurrencyApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -83,14 +82,22 @@ object AppModule {
         return retrofit.create(CurrencyApi::class.java)
     }
 
-    @Singleton
     @Provides
-    fun provideDatabase(
-        @ApplicationContext context: Context
-    ) = Room.databaseBuilder(
-        context,
-        GeneralDatabase::class.java,
-        APP_DATABASE
-    ).build()
+    @Singleton
+    fun provideStockDatabase(app: Application): GeneralDatabase {
+        return Room.databaseBuilder(
+            app,
+            GeneralDatabase::class.java,
+            APP_DATABASE
+        ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBalanceDao(database: GeneralDatabase) = database.balancesDao
+
+    @Provides
+    @Singleton
+    fun provideTransactionDao(database: GeneralDatabase) = database.transactionsDao
 
 }
