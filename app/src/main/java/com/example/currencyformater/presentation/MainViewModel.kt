@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.currencyformater.common.UiState
 import com.example.currencyformater.common.fees.TransactionFee
 import com.example.currencyformater.common.preferences.Preferences
+import com.example.currencyformater.common.removeExtraDigits
 import com.example.currencyformater.data.local.BalanceListingEntity
 import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
@@ -138,7 +139,7 @@ class MainViewModel @Inject constructor(
                 }
 
                 if (!currencyUseCase.hasThisCurrency(fromCurrency.name)) {
-                    displayErrorMessage("You don't have available balance for ${fromCurrency.name}")
+                    displayErrorMessage("You don't have available balance for " + fromCurrency.name)
                     return@launch
                 }
 
@@ -169,7 +170,7 @@ class MainViewModel @Inject constructor(
                     addOneMoreTransactionForToday(transactionsForToday + 1)
                 } else {
                     //error message
-                    displayErrorMessage("You don't have enough my money to ${fromCurrency.name} balance")
+                    displayErrorMessage("You don't have enough money to ${fromCurrency.name} balance")
                 }
 
             }
@@ -195,11 +196,11 @@ class MainViewModel @Inject constructor(
 
     private suspend fun updateReceivedCurrency(currencyName: String) {
         val oldBalance = balancesList.value.find { it.name == currencyName }?.balance ?: 0.0
-        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, oldBalance + convertedAmount.value))
+        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, (oldBalance + convertedAmount.value).removeExtraDigits()))
     }
 
     private suspend fun removeTheTotalAmountFromChosenCurrency(finalAmount: Double, currencyName: String) {
-        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, finalAmount))
+        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, finalAmount.removeExtraDigits()))
     }
 
     private suspend fun getTheTransactionsForToday(): Int {
