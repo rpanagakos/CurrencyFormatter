@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
+/*TODO:  ADD THE TEXTS TO STRING.XML SO THEY AR ENOT HARDCODED,
+        FIND A BETTER WAY FOR SUBMIT FUN,
+        FIX A SMALL UX ISSUE */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val mainUseCase: MainUseCase,
@@ -39,7 +42,7 @@ class MainViewModel @Inject constructor(
     }
 
     private var baseCurrency = START_CURRENCY
-    private var currentDate: String = "3223232"
+    private var currentDate: String = ""
 
     private var pollingJob: Job? = null
 
@@ -55,15 +58,7 @@ class MainViewModel @Inject constructor(
     private val _dialogMessage: MutableState<String> = mutableStateOf("")
     val dialogMessage: State<String> = _dialogMessage
 
-    private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(
-        listOf(
-            CurrencyRateData("GBP", 0.864015),
-            CurrencyRateData("EUR", 1.0),
-            CurrencyRateData("AED", 3.845625),
-            CurrencyRateData("AFN", 92.246443)
-
-        )
-    )
+    private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(listOf(CurrencyRateData("EUR", 1.0)))
     val receiveCurrencies: State<List<CurrencyRateData>> = _receiveCurrencies
 
     private val _convertedAmount: MutableState<Double> = mutableStateOf(0.0)
@@ -73,7 +68,7 @@ class MainViewModel @Inject constructor(
     fun onResume() {
         isFirstTimeInTheApp()
         getUserBalances()
-        //getRates()
+        getRates()
     }
 
     fun onPause() {

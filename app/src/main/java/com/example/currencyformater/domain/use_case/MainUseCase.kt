@@ -17,6 +17,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 @ViewModelScoped
+@OpenClassTesting
 class MainUseCase @Inject constructor(
     private val repository: CurrencyRepository,
     private val generalDatabase: GeneralDatabase,
