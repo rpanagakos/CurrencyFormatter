@@ -14,10 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.currencyformater.domain.model.CurrencyRateData
-import com.example.currencyformater.presentation.MainViewModel
-import com.example.currencyformater.presentation.components.BalancesSectionItem
-import com.example.currencyformater.presentation.components.CurrencyConverterSectionItem
-import com.example.currencyformater.presentation.components.DialogMessageItem
+import com.example.currencyformater.presentation.main_screen.components.BalancesSectionItem
+import com.example.currencyformater.presentation.main_screen.components.CurrencyConverterSectionItem
+import com.example.currencyformater.presentation.main_screen.components.DialogMessageItem
 import com.example.currencyformater.theme.LocalTheme
 
 @Composable

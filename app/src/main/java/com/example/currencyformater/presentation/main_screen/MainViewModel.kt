@@ -1,4 +1,4 @@
-package com.example.currencyformater.presentation
+package com.example.currencyformater.presentation.main_screen
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -13,7 +13,7 @@ import com.example.currencyformater.data.local.BalanceListingEntity
 import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.CurrencyRateData
-import com.example.currencyformater.domain.use_case.CurrencyUseCase
+import com.example.currencyformater.domain.use_case.MainUseCase
 import com.rdp.ghostium.di.DefaultDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -26,15 +26,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val currencyUseCase: CurrencyUseCase,
+    private val mainUseCase: MainUseCase,
     private val transactionFee: TransactionFee,
     private val preferences: Preferences,
-    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     companion object {
         const val START_CURRENCY = "EUR"
         const val INITIAL_BUDGET = 1000.0
+        const val DEFAULT_EURO_RATE = 1.0
+        const val ZERO_BALANCE = 0.0
     }
 
     private var baseCurrency = START_CURRENCY
@@ -86,13 +87,13 @@ class MainViewModel @Inject constructor(
 
     private fun addAppGiftMoneyDueToXmas() {
         viewModelScope.launch {
-            currencyUseCase.updateCustomerBalance(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
+            mainUseCase.updateCustomerBalance(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
         }
     }
 
     private fun getUserBalances() {
         viewModelScope.launch {
-            currencyUseCase.getBalances.collect {
+            mainUseCase.getBalances.collect {
                 _balancesList.value = it.map { entity -> BalanceListingData(entity) }
             }
         }
@@ -100,7 +101,7 @@ class MainViewModel @Inject constructor(
 
     private fun getRates() {
         pollingJob?.cancel()
-        currencyUseCase.getRates(baseCurrency).onEach { result ->
+        mainUseCase.getRates(baseCurrency).onEach { result ->
             when (result) {
                 is UiState.Success -> {
                     pollingJob = rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
@@ -141,7 +142,7 @@ class MainViewModel @Inject constructor(
                     return@launch
                 }
 
-                if (!currencyUseCase.hasThisCurrency(fromCurrency.name)) {
+                if (!mainUseCase.hasThisCurrency(fromCurrency.name)) {
                     displayPopMessage("You don't have available balance for " + fromCurrency.name)
                     return@launch
                 }
@@ -149,7 +150,7 @@ class MainViewModel @Inject constructor(
                 val euroRate = getEuroRateForExtraFee(fromCurrency.name)
 
                 val transactionsForToday =
-                    if (currencyUseCase.hasTransactionsForToday(currentDate))
+                    if (mainUseCase.hasTransactionsForToday(currentDate))
                         getTheTransactionsForToday()
                     else
                         0
@@ -189,35 +190,35 @@ class MainViewModel @Inject constructor(
     }
 
     private suspend fun addOneMoreTransactionForToday(totalTransaction: Int) {
-        currencyUseCase.addOneMoreTransactionForToday(UserTransactionsEntity(currentDate, totalTransaction))
+        mainUseCase.addOneMoreTransactionForToday(UserTransactionsEntity(currentDate, totalTransaction))
     }
 
     private suspend fun updateReceivedCurrency(currencyName: String) {
-        val oldBalance = balancesList.value.find { it.name == currencyName }?.balance ?: 0.0
-        currencyUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, (oldBalance + convertedAmount.value).removeExtraDigits()))
+        val oldBalance = balancesList.value.find { it.name == currencyName }?.balance ?: ZERO_BALANCE
+        mainUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, (oldBalance + convertedAmount.value).removeExtraDigits()))
     }
 
     private suspend fun removeTheTotalAmountFromChosenCurrency(finalAmount: Double, currencyName: String) {
-        currencyUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, finalAmount.removeExtraDigits()))
+        mainUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, finalAmount.removeExtraDigits()))
     }
 
     private suspend fun getTheTransactionsForToday(): Int {
         val job = viewModelScope.async {
-            return@async currencyUseCase.getTransactionsForToday(currentDate)
+            return@async mainUseCase.getTransactionsForToday(currentDate)
         }
         return job.await()
     }
 
     private fun retrieveBalanceFromSellCurrency(currencyName: String) =
-        balancesList.value.firstOrNull() { it.name == currencyName }?.balance ?: 0.0
+        balancesList.value.firstOrNull() { it.name == currencyName }?.balance ?: ZERO_BALANCE
 
     private fun getEuroRateForExtraFee(currencyName: String) : Double =
         if (currencyName == START_CURRENCY)
-            1.0
+            DEFAULT_EURO_RATE
         else
             receiveCurrencies.value.find {
                 it.name == START_CURRENCY
-            }?.rate ?: 1.0
+            }?.rate ?: DEFAULT_EURO_RATE
 
 
     //this probably should move to an abstract class

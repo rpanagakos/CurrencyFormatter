@@ -1,4 +1,4 @@
-package com.example.currencyformater.presentation.components
+package com.example.currencyformater.presentation.main_screen.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size

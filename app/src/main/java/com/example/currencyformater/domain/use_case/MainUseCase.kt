@@ -17,7 +17,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 @ViewModelScoped
-class CurrencyUseCase @Inject constructor(
+class MainUseCase @Inject constructor(
     private val repository: CurrencyRepository,
     private val generalDatabase: GeneralDatabase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher

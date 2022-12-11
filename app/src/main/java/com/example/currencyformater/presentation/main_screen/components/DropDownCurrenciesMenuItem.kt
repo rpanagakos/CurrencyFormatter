@@ -1,4 +1,4 @@
-package com.example.currencyformater.presentation.components
+package com.example.currencyformater.presentation.main_screen.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
