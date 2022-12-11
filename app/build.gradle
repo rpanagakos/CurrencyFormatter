@@ -124,7 +124,10 @@ dependencies {
     testImplementation 'app.cash.turbine:turbine:0.8.0'
     testImplementation 'com.google.truth:truth:1.1.3'
     implementation "androidx.arch.core:core-testing:2.1.0"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4"
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4") {
+        // https://github.com/Kotlin/kotlinx.coroutines/tree/master/kotlinx-coroutines-debug#debug-agent-and-android
+        exclude group: "org.jetbrains.kotlinx", module: "kotlinx-coroutines-debug"
+    }
 
 
 }

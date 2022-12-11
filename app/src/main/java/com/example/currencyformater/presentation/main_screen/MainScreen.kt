@@ -29,7 +29,7 @@ fun MainScreen(
     val balancesList = viewModel.balancesList.value
     val receiveCurrencies = viewModel.receiveCurrencies.value
     val convertedAmount = viewModel.convertedAmount.value
-    val errorMessage = viewModel.dialogMessage.collectAsState()
+    val errorMessage = viewModel.dialogMessage.value
     val displayDialog = viewModel.showDialog.value
 
     val changeBaseCurrency: (currencyName : String) -> Unit =
@@ -56,7 +56,7 @@ fun MainScreen(
     Box(modifier = Modifier.fillMaxSize()) {
 
         if (displayDialog){
-            DialogMessageItem(message = errorMessage.value, onDismissRequest = viewModel::changeDialogStatus )
+            DialogMessageItem(message = errorMessage, onDismissRequest = viewModel::changeDialogStatus )
         }
 
         LazyColumn(

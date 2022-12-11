@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.currencyformater.common.Constants.API_KEY
 import com.example.currencyformater.common.Constants.APP_DATABASE
 import com.example.currencyformater.common.Constants.BASE_URL
+import com.example.currencyformater.common.DispatcherProvider
 import com.example.currencyformater.data.local.GeneralDatabase
 import com.example.currencyformater.data.remote.CurrencyApi
 import dagger.Module
@@ -99,5 +100,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTransactionDao(database: GeneralDatabase) = database.transactionsDao
+
+    @Provides
+    @Singleton
+    fun provideDispatcher() = DispatcherProvider()
 
 }

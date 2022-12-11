@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.currencyformater.common.DispatcherProvider
 import com.example.currencyformater.common.UiState
 import com.example.currencyformater.common.fees.TransactionFee
 import com.example.currencyformater.common.preferences.Preferences
@@ -14,13 +15,11 @@ import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.BalanceListingData
 import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.domain.use_case.MainUseCase
-import com.rdp.ghostium.di.DefaultDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -29,6 +28,7 @@ class MainViewModel @Inject constructor(
     private val mainUseCase: MainUseCase,
     private val transactionFee: TransactionFee,
     private val preferences: Preferences,
+    private val dispatcherProvider: DispatcherProvider
 ) : ViewModel() {
 
     companion object {
@@ -52,8 +52,8 @@ class MainViewModel @Inject constructor(
     private val _showDialog: MutableState<Boolean> = mutableStateOf(false)
     val showDialog: State<Boolean> = _showDialog
 
-    private val _dialogMessage = MutableStateFlow<String>("")
-    val dialogMessage = _dialogMessage.asStateFlow()
+    private val _dialogMessage: MutableState<String> = mutableStateOf("")
+    val dialogMessage: State<String> = _dialogMessage
 
     private val _receiveCurrencies: MutableState<List<CurrencyRateData>> = mutableStateOf(
         listOf(
@@ -69,10 +69,15 @@ class MainViewModel @Inject constructor(
     private val _convertedAmount: MutableState<Double> = mutableStateOf(0.0)
     val convertedAmount: State<Double> = _convertedAmount
 
-    init {
+
+    fun onResume() {
         isFirstTimeInTheApp()
         getUserBalances()
-        //getRates()
+        getRates()
+    }
+
+    fun onPause() {
+        pollingJob?.cancel()
     }
 
     private fun isFirstTimeInTheApp() {
@@ -86,13 +91,13 @@ class MainViewModel @Inject constructor(
     private fun displayWalkthrough() {}
 
     private fun addAppGiftMoneyDueToXmas() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherProvider.mainDispatcher) {
             mainUseCase.updateCustomerBalance(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
         }
     }
 
     private fun getUserBalances() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherProvider.mainDispatcher) {
             mainUseCase.getBalances.collect {
                 _balancesList.value = it.map { entity -> BalanceListingData(entity) }
             }
@@ -101,20 +106,22 @@ class MainViewModel @Inject constructor(
 
     private fun getRates() {
         pollingJob?.cancel()
-        mainUseCase.getRates(baseCurrency).onEach { result ->
-            when (result) {
-                is UiState.Success -> {
-                    pollingJob = rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
-                    if (result.data != null) {
-                        currentDate = result.data.date
-                        _currenciesRates.value = result.data.rates
-                        _receiveCurrencies.value = listOf(CurrencyRateData(baseCurrency, 1.0)) + result.data.rates
+        viewModelScope.launch(dispatcherProvider.mainDispatcher) {
+            mainUseCase.getRates(baseCurrency).collect { result ->
+                when (result) {
+                    is UiState.Success -> {
+                        pollingJob = rescheduleNextCall(TimeUnit.MINUTES.toMillis(1), ::getRates)
+                        if (result.data != null) {
+                            currentDate = result.data.date
+                            _currenciesRates.value = result.data.rates
+                            _receiveCurrencies.value = listOf(CurrencyRateData(baseCurrency, 1.0)) + result.data.rates
+                        }
                     }
+                    is UiState.Error -> {}
+                    is UiState.Loading -> {}
                 }
-                is UiState.Error -> {}
-                is UiState.Loading -> {}
             }
-        }.launchIn(viewModelScope)
+        }
     }
 
     fun changeBaseCurrency(currencyName: String) {
@@ -123,19 +130,20 @@ class MainViewModel @Inject constructor(
     }
 
     fun convertOnFlyTheAmount(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
-        if (amount.isEmpty()) {
-            _convertedAmount.value = 0.0
-            return
-        }
-        viewModelScope.launch {
-            delay(300)
+        try {
+            if (amount.isEmpty()) {
+                _convertedAmount.value = 0.0
+                return
+            }
             val newAmount = amount.toDouble() * toCurrency.rate
             _convertedAmount.value = newAmount
+        } catch (e: java.lang.Exception) {
+            displayPopMessage("Something went wrong! Please check the amount you entered")
         }
     }
 
     fun submitConvert(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(dispatcherProvider.defaultDispatcher) {
             try {
                 if (fromCurrency.name == toCurrency.name) {
                     displayPopMessage("You have same  currency in both fields: ${fromCurrency.name}")
@@ -179,10 +187,9 @@ class MainViewModel @Inject constructor(
     }
 
     private fun displayPopMessage(errorMessage: String) {
-        viewModelScope.launch {
-            _dialogMessage.emit(errorMessage)
-            changeDialogStatus()
-        }
+        _dialogMessage.value = errorMessage
+        changeDialogStatus()
+
     }
 
     fun changeDialogStatus() {
@@ -212,7 +219,7 @@ class MainViewModel @Inject constructor(
     private fun retrieveBalanceFromSellCurrency(currencyName: String) =
         balancesList.value.firstOrNull() { it.name == currencyName }?.balance ?: ZERO_BALANCE
 
-    private fun getEuroRateForExtraFee(currencyName: String) : Double =
+    private fun getEuroRateForExtraFee(currencyName: String): Double =
         if (currencyName == START_CURRENCY)
             DEFAULT_EURO_RATE
         else
