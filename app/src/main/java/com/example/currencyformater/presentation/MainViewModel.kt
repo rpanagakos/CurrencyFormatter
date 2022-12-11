@@ -17,7 +17,10 @@ import com.example.currencyformater.domain.use_case.CurrencyUseCase
 import com.rdp.ghostium.di.DefaultDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -131,8 +134,8 @@ class MainViewModel @Inject constructor(
     }
 
     fun submitConvert(amount: String, fromCurrency: CurrencyRateData, toCurrency: CurrencyRateData) {
-        try {
-            viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
                 if (fromCurrency.name == toCurrency.name) {
                     displayErrorMessage("You have same  currency in both fields: ${fromCurrency.name}")
                     return@launch
@@ -142,7 +145,6 @@ class MainViewModel @Inject constructor(
                     displayErrorMessage("You don't have available balance for " + fromCurrency.name)
                     return@launch
                 }
-
 
                 val euroRate =
                     if (fromCurrency.name == START_CURRENCY)
@@ -157,7 +159,8 @@ class MainViewModel @Inject constructor(
                         getTheTransactionsForToday()
                     else
                         0
-                val amountWithFee = amount.toDouble() + transactionFee.calculateTheFinalTransactionFee(amount.toDouble(), euroRate, transactionsForToday)
+                val fee = transactionFee.calculateTheFinalTransactionFee(amount.toDouble(), euroRate, transactionsForToday)
+                val amountWithFee = amount.toDouble() + fee
                 //need to check if it has the correct balance after the commission
                 val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
                 val finalAmount = balanceFromCurrency - amountWithFee
@@ -168,14 +171,16 @@ class MainViewModel @Inject constructor(
                     removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
                     //plus +1 the transaction
                     addOneMoreTransactionForToday(transactionsForToday + 1)
+
+                    //display info message
+                    displayErrorMessage("You transaction has been completed. Your new balance is $finalAmount ${fromCurrency.name}")
                 } else {
                     //error message
                     displayErrorMessage("You don't have enough money to ${fromCurrency.name} balance")
                 }
-
+            } catch (e: java.lang.Exception) {
+                displayErrorMessage("Something went wrong! Please check the amount you entered")
             }
-        } catch (e: java.lang.Exception) {
-            displayErrorMessage("Something went wrong! Please check the amount you entered")
         }
     }
 
