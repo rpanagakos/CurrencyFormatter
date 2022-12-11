@@ -73,7 +73,7 @@ class MainViewModel @Inject constructor(
     fun onResume() {
         isFirstTimeInTheApp()
         getUserBalances()
-        getRates()
+        //getRates()
     }
 
     fun onPause() {

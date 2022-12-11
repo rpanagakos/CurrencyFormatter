@@ -1,5 +1,6 @@
 package com.example.currencyformater.domain.use_case
 
+import com.example.currencyformater.common.DispatcherProvider
 import com.example.currencyformater.common.UiState
 import com.example.currencyformater.common.annotations.OpenClassTesting
 import com.example.currencyformater.data.local.BalanceListingEntity
@@ -10,15 +11,16 @@ import com.example.currencyformater.domain.respository.CurrencyRepository
 import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
 @ViewModelScoped
-@OpenClassTesting
 class MainUseCase @Inject constructor(
     private val repository: CurrencyRepository,
-    private val generalDatabase: GeneralDatabase
+    private val generalDatabase: GeneralDatabase,
+    private val dispatcherProvider: DispatcherProvider
 ) {
 
     private val balancesDao = generalDatabase.balancesDao
@@ -34,7 +36,7 @@ class MainUseCase @Inject constructor(
         } catch (e: IOException) {
             emit(UiState.Error<ExchangeRateData>("Couldn't reach server. Check your internet connection."))
         }
-    }
+    }.flowOn(dispatcherProvider.iODispatcher)
 
     suspend fun updateCustomerBalance(balanceListingEntity: BalanceListingEntity) {
         balancesDao.insertBalance(balanceListingEntity)

@@ -3,11 +3,16 @@ package com.example.currencyformater.presentation.main_screen
 import com.example.currencyformater.common.DispatcherProvider
 import com.example.currencyformater.common.fees.TransactionFee
 import com.example.currencyformater.common.preferences.Preferences
+import com.example.currencyformater.data.local.BalanceListingEntity
+import com.example.currencyformater.data.local.UserTransactionsEntity
 import com.example.currencyformater.domain.model.CurrencyRateData
 import com.example.currencyformater.domain.use_case.MainUseCase
 import com.google.common.truth.Truth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
@@ -18,6 +23,8 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
@@ -132,6 +139,51 @@ class MainViewModelTest {
         val showDialog = mainViewModel.showDialog.value
         assertEquals("You don't have enough money to EUR balance", dialogMessage)
         Truth.assertThat(showDialog).isTrue()
+    }
+
+    @Test
+    fun `submit the conversion with  balance of sell currency`() = runTest() {
+
+        val balanceFlow = flow<List<BalanceListingEntity>> {
+            emit(listOf(BalanceListingEntity("EUR", 100000.0)))
+        }
+
+        assertNotNull(balanceFlow)
+        mainUseCase.stub {
+            onBlocking { getBalances }.doReturn(balanceFlow)
+        }
+
+
+        var list = emptyList<BalanceListingEntity>()
+
+        val job = launch {
+            mainUseCase.getBalances.collectLatest {
+                list = it
+            }
+        }
+
+        runCurrent()
+
+        mainViewModel.onResume()
+
+        advanceTimeBy(100)
+
+        Truth.assertThat(list.size).isEqualTo(1)
+        val balance = mainViewModel.balancesList.value
+        assertNotNull(balance)
+
+        val currencyRateData = CurrencyRateData("EUR", 1.0)
+        val currencyRateDat2 = CurrencyRateData("AUD", 1.4)
+        Mockito.`when`(mainUseCase.hasThisCurrency(currencyRateData.name)).thenReturn(true)
+        mainViewModel.submitConvert("10.0", currencyRateData, currencyRateDat2)
+        runCurrent()
+        verify(mainUseCase, times(1)).updateCustomerBalance(BalanceListingEntity(name = currencyRateData.name, balance = 99990.0))
+        verify(mainUseCase, times(1)).addOneMoreTransactionForToday(UserTransactionsEntity(date = "", times = 1))
+        val dialogMessage = mainViewModel.dialogMessage.value
+        val showDialog = mainViewModel.showDialog.value
+        assertEquals("You transaction has been completed. Your new balance is 99990.0 EUR", dialogMessage)
+        Truth.assertThat(showDialog).isTrue()
+        job.cancel()
     }
 
 

@@ -66,7 +66,11 @@ fun DropDownCurrenciesMenuItem(
                     modifier = Modifier.padding(
                         start = LocalTheme.spacing.padding_6dp
                     ),
-                    text = listMenu[selectedIndex.value].name,
+                    text =
+                    if (listMenu.isNotEmpty())
+                        listMenu[selectedIndex.value].name
+                    else
+                        "",
                     style = LocalTheme.typography.REGULAR_14_MONT,
                     color = LocalTheme.colors.WarmBlack
                 )
