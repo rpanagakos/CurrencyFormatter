@@ -38,7 +38,7 @@ class CurrencyUseCase @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
-    suspend fun addMoneyToFirstUser(balanceListingEntity: BalanceListingEntity) {
+    suspend fun updateCustomerBalance(balanceListingEntity: BalanceListingEntity) {
         balancesDao.insertBalance(balanceListingEntity)
     }
 

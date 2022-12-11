@@ -86,7 +86,7 @@ class MainViewModel @Inject constructor(
 
     private fun addAppGiftMoneyDueToXmas() {
         viewModelScope.launch {
-            currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
+            currencyUseCase.updateCustomerBalance(BalanceListingEntity(START_CURRENCY, INITIAL_BUDGET))
         }
     }
 
@@ -137,22 +137,16 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 if (fromCurrency.name == toCurrency.name) {
-                    displayErrorMessage("You have same  currency in both fields: ${fromCurrency.name}")
+                    displayPopMessage("You have same  currency in both fields: ${fromCurrency.name}")
                     return@launch
                 }
 
                 if (!currencyUseCase.hasThisCurrency(fromCurrency.name)) {
-                    displayErrorMessage("You don't have available balance for " + fromCurrency.name)
+                    displayPopMessage("You don't have available balance for " + fromCurrency.name)
                     return@launch
                 }
 
-                val euroRate =
-                    if (fromCurrency.name == START_CURRENCY)
-                        1.0
-                    else
-                        receiveCurrencies.value.find {
-                            it.name == START_CURRENCY
-                        }?.rate ?: 1.0
+                val euroRate = getEuroRateForExtraFee(fromCurrency.name)
 
                 val transactionsForToday =
                     if (currencyUseCase.hasTransactionsForToday(currentDate))
@@ -162,7 +156,7 @@ class MainViewModel @Inject constructor(
                 val fee = transactionFee.calculateTheFinalTransactionFee(amount.toDouble(), euroRate, transactionsForToday)
                 val amountWithFee = amount.toDouble() + fee
                 //need to check if it has the correct balance after the commission
-                val balanceFromCurrency = balancesList.value.firstOrNull() { it.name == fromCurrency.name }?.balance ?: 0.0
+                val balanceFromCurrency = retrieveBalanceFromSellCurrency(fromCurrency.name)
                 val finalAmount = balanceFromCurrency - amountWithFee
                 if (finalAmount > 0) {
                     //save the new currency  + old balance of it if it has
@@ -171,20 +165,19 @@ class MainViewModel @Inject constructor(
                     removeTheTotalAmountFromChosenCurrency(finalAmount, fromCurrency.name)
                     //plus +1 the transaction
                     addOneMoreTransactionForToday(transactionsForToday + 1)
-
                     //display info message
-                    displayErrorMessage("You transaction has been completed. Your new balance is $finalAmount ${fromCurrency.name}")
+                    displayPopMessage("You transaction has been completed. Your new balance is $finalAmount ${fromCurrency.name}")
                 } else {
                     //error message
-                    displayErrorMessage("You don't have enough money to ${fromCurrency.name} balance")
+                    displayPopMessage("You don't have enough money to ${fromCurrency.name} balance")
                 }
             } catch (e: java.lang.Exception) {
-                displayErrorMessage("Something went wrong! Please check the amount you entered")
+                displayPopMessage("Something went wrong! Please check the amount you entered")
             }
         }
     }
 
-    private fun displayErrorMessage(errorMessage: String) {
+    private fun displayPopMessage(errorMessage: String) {
         viewModelScope.launch {
             _dialogMessage.emit(errorMessage)
             changeDialogStatus()
@@ -201,11 +194,11 @@ class MainViewModel @Inject constructor(
 
     private suspend fun updateReceivedCurrency(currencyName: String) {
         val oldBalance = balancesList.value.find { it.name == currencyName }?.balance ?: 0.0
-        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, (oldBalance + convertedAmount.value).removeExtraDigits()))
+        currencyUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, (oldBalance + convertedAmount.value).removeExtraDigits()))
     }
 
     private suspend fun removeTheTotalAmountFromChosenCurrency(finalAmount: Double, currencyName: String) {
-        currencyUseCase.addMoneyToFirstUser(BalanceListingEntity(currencyName, finalAmount.removeExtraDigits()))
+        currencyUseCase.updateCustomerBalance(BalanceListingEntity(currencyName, finalAmount.removeExtraDigits()))
     }
 
     private suspend fun getTheTransactionsForToday(): Int {
@@ -214,6 +207,18 @@ class MainViewModel @Inject constructor(
         }
         return job.await()
     }
+
+    private fun retrieveBalanceFromSellCurrency(currencyName: String) =
+        balancesList.value.firstOrNull() { it.name == currencyName }?.balance ?: 0.0
+
+    private fun getEuroRateForExtraFee(currencyName: String) : Double =
+        if (currencyName == START_CURRENCY)
+            1.0
+        else
+            receiveCurrencies.value.find {
+                it.name == START_CURRENCY
+            }?.rate ?: 1.0
+
 
     //this probably should move to an abstract class
     private fun rescheduleNextCall(repeatMillis: Long, call: () -> Unit): Job {
